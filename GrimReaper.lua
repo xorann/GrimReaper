@@ -80,9 +80,9 @@ function GrimReaper:PLAYER_REGEN_DISABLED()
 		--local _name, _rank, _subgroup, _level, _class, _fileName, _zone, _online, _isDead, _role, _isML = GetRaidRosterInfo(i)
 		local name = GetRaidRosterInfo(i)
 		raid[name] = {
-			[1] = { time = nil, msg = nil },
-			[2] = { time = nil, msg = nil },
-			[3] = { time = nil, msg = nil }
+			[1] = { t = nil, m = nil },
+			[2] = { t = nil, m = nil },
+			[3] = { t = nil, m = nil }
 		}
 		--GrimReaper:Print("found " .. name)
 	end
@@ -104,31 +104,9 @@ function GrimReaper:CombatLog(msg)
 			--table.insert(raid[target], 1, msg)
 			--table.remove(raid[target])
 			
-			table.insert(raid[target], { time = GetTime(), msg = msg })
+			table.insert(raid[target], { t = GetTime(), m = msg })
 			table.remove(raid[target], 1)
 		end
-	end
-end
-
-function GrimReaper:CHAT_MSG_COMBAT_FRIENDLY_DEATH(msg)
-	local start, ending, name = string.find(msg, L["trigger_death"])
-	if name and raid[name] then
-		local msg = "|cffA60000" .. name .. "|r" .. " died: \n"
-		
-		if raid[name][1][msg] then
-            local time = getTimeDifference(raid[name][1][time], GetTime())
-            log = log .. time .. "s: " .. raid[name][1][msg] .. "\n"
-        end
-		if raid[name][2][msg] then
-            local time = getTimeDifference(raid[name][2][time], GetTime())
-            log = log .. time .. "s: " .. raid[name][2][msg] .. "\n"
-        end
-		if raid[name][3][msg] then
-            local time = getTimeDifference(raid[name][3][time], GetTime())
-            log = log .. time .. "s: " .. raid[name][3][msg] .. "\n"
-        end
-		
-		GrimReaper:Print(msg)
 	end
 end
 
@@ -138,4 +116,26 @@ local function getTimeDifference(time1, time2)
     local result = floor((time2 - time1) * shift + 0.5) / shift
     
     return result
+end
+
+function GrimReaper:CHAT_MSG_COMBAT_FRIENDLY_DEATH(msg)
+	local start, ending, name = string.find(msg, L["trigger_death"])
+	if name and raid[name] then
+		local log = "|cffA60000" .. name .. "|r" .. " died: \n"
+		
+		if raid[name][1]["m"] then
+            local time = getTimeDifference(raid[name][1]["t"], GetTime())
+            log = log .. time .. "s: " .. raid[name][1]["m"] .. "\n"
+        end
+		if raid[name][2]["m"] then
+            local time = getTimeDifference(raid[name][2]["t"], GetTime())
+            log = log .. time .. "s: " .. raid[name][2]["m"] .. "\n"
+        end
+		if raid[name][3]["m"] then
+            local time = getTimeDifference(raid[name][3]["t"], GetTime())
+            log = log .. time .. "s: " .. raid[name][3]["m"] .. "\n"
+        end
+		
+		GrimReaper:Print(log)
+	end
 end
