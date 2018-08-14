@@ -1,5 +1,7 @@
 --[[
     Addon created by Dorann
+	
+	Shows the last three hits after a player dies.
 --]]
 
 ------------------------------
@@ -22,7 +24,7 @@ GrimReaper.cmdtable = {
 		},]]
 	}
 }
-GrimReaper:RegisterChatCommand({"/reaper"}, GrimReaper.cmdtable)
+GrimReaper:RegisterChatCommand({"/grimreaper"}, GrimReaper.cmdtable)
 
 GrimReaper.defaultDB = {
 }
@@ -84,7 +86,6 @@ function GrimReaper:PLAYER_REGEN_DISABLED()
 			[2] = { t = nil, m = nil },
 			[3] = { t = nil, m = nil }
 		}
-		--GrimReaper:Print("found " .. name)
 	end
 end
 
@@ -98,12 +99,7 @@ function GrimReaper:CombatLog(msg)
 	end
 	
 	if start then
-		--GrimReaper:Print("target: " .. target)
-		if target and raid[target] ~= nil then
-			--GrimReaper:Print(msg)
-			--table.insert(raid[target], 1, msg)
-			--table.remove(raid[target])
-			
+		if target and raid[target] ~= nil then			
 			table.insert(raid[target], { t = GetTime(), m = msg })
 			table.remove(raid[target], 1)
 		end
@@ -118,24 +114,34 @@ local function getTimeDifference(time1, time2)
     return result
 end
 
+local function formatMessage(msg, time) 
+	local start, ending, _a, _b, _c = string.find(msg, "(.+) ([%d]+)(.+)");
+	local t = getTimeDifference(time, GetTime())
+	
+	local formatted = "\n|c0000ff00" .. t .. "s|r: " .. _a .. " |cffA60000" .. _b .. "|r" .. _c
+	
+	return formatted
+end
+
 function GrimReaper:CHAT_MSG_COMBAT_FRIENDLY_DEATH(msg)
 	local start, ending, name = string.find(msg, L["trigger_death"])
 	if name and raid[name] then
-		local log = "|cffA60000" .. name .. "|r" .. " died: \n"
+		local log = "|cffA60000" .. name .. "|r" .. " died:"
 		
-		if raid[name][1]["m"] then
-            local time = getTimeDifference(raid[name][1]["t"], GetTime())
-            log = log .. time .. "s: " .. raid[name][1]["m"] .. "\n"
-        end
-		if raid[name][2]["m"] then
-            local time = getTimeDifference(raid[name][2]["t"], GetTime())
-            log = log .. time .. "s: " .. raid[name][2]["m"] .. "\n"
-        end
-		if raid[name][3]["m"] then
-            local time = getTimeDifference(raid[name][3]["t"], GetTime())
-            log = log .. time .. "s: " .. raid[name][3]["m"] .. "\n"
-        end
+		for row, data in pairs(raid[name]) do
+			if data["m"] then
+				log = log .. formatMessage(data["m"], data["t"])
+			end
+		end
 		
 		GrimReaper:Print(log)
 	end
+end
+
+function GrimReaper:Test()
+	GrimReaper:PLAYER_REGEN_DISABLED()
+	GrimReaper:CombatLog("Someone hits "..UnitName("player").." for 123.")
+	GrimReaper:CombatLog("Someone's Fireball crits "..UnitName("player").." for 456.")
+	GrimReaper:CombatLog("Someone hits "..UnitName("player").." for 789. (123 blocked)")
+	GrimReaper:CHAT_MSG_COMBAT_FRIENDLY_DEATH(UnitName("player").." dies.")
 end
